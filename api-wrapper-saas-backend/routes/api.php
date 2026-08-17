@@ -3,6 +3,7 @@
 use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GenerateController;
+use App\Http\Controllers\StripeController;
 use App\Http\Controllers\UsageController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -18,7 +19,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/v1/keys', [ApiKeyController::class, 'store']);
     Route::delete('/v1/keys/{apiKey}', [ApiKeyController::class, 'destroy']);
     Route::get('/v1/usage', [UsageController::class, 'index']);
+    Route::post('/v1/stripe/checkout', [StripeController::class, 'checkout']);
 });
+
+Route::post('/v1/stripe/webhook', [StripeController::class, 'webhook']);
 
 Route::middleware(['api.key'])->group(function () {
     Route::post('/v1/generate', GenerateController::class);

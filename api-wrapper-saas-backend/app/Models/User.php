@@ -64,6 +64,11 @@ class User extends Authenticatable
         return $this->hasMany(Usage::class);
     }
 
+    public function subscriptions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
     public function getPlan(): \App\Models\Plan
     {
         return $this->plan()->firstOrCreate(
