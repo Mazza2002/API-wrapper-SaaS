@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\GenerateRequest;
+use App\Jobs\LogApiUsage;
 use App\Services\ExternalApiClient;
 use App\Services\QuotaService;
 use App\Services\RateLimitService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Bus;
 
 class GenerateController extends Controller
 {
@@ -24,15 +26,18 @@ class GenerateController extends Controller
         $this->quotaService->ensureUserCanGenerate($user);
         $this->rateLimitService->check($apiKey);
 
+        $startedAt = microtime(true);
         $result = $this->externalApiClient->generate($request->input('prompt'));
+        $durationMs = (int) round((microtime(true) - $startedAt) * 1000);
 
-        $user->usages()->create([
-            'api_key_id' => $request->attributes->get('api_key')?->id,
-            'endpoint' => '/api/v1/generate',
-            'status' => $result['status'] ?? 'success',
-            'credits_used' => 1,
-            'latency_ms' => 150,
-        ]);
+        dispatch(new LogApiUsage(
+            userId: $user->id,
+            apiKeyId: $request->attributes->get('api_key')?->id,
+            endpoint: '/api/v1/generate',
+            status: $result['status'] ?? 'success',
+            creditsUsed: 1,
+            latencyMs: $durationMs,
+        ));
 
         return response()->json([
             'data' => $result,
